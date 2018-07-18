@@ -18,14 +18,14 @@
 #define DEBUGGING 1 // controls debugging functionality
 
 // Digital IO pins used to send colour commands to the Panel Commander
-#define REDPIN 1
-#define GREENPIN 2
-#define BLUEPIN 3
+#define REDPIN 2
+#define GREENPIN 3
+#define BLUEPIN 4
 
 #define NUM_PINS 3
 char pinSet[] = {REDPIN,GREENPIN,BLUEPIN}; // used to simplify writing outputs
 
-// Timing information so we can get nice even flashes
+// Timing information so we can get nice even flashes with a little wiggle room for lag or timing issues
 #define FLASH_TIME 1000
 #define FLASH_DELTA 10
 
@@ -59,11 +59,14 @@ boolean textChanged = false; // change flag
 char* defaultTextField; // Stores raw data from the input text field
 
 // UI Objects
-uint8_t textField, updateButton; // interactive objects
-uint8_t ui_rect; // the default object
-uint8_t legendText; // the text space we'll use to display debugging info if in use
+uint8_t textField; // interactive objects
+uint8_t curCodeText, legendText; // the text space we'll use to display debugging info if in use
 
-const char *defaultLegend = "Allowed Characters Legend\n K - Black \n W- White \n R - Red \n G - Green \n B - Blue \n A - Aqua \n P - Purple \n Y - Yellow";
+// For Displaying Text of Various Sorts
+char titleString[] = "Enter 3 Letter Colour Sequence\n e.g. \"RGB\"";
+char curString[] = "Currently: APY"; // to display the current string
+uint8_t curStringOffset = 11; // number of characters to offset so we can make some sneaky alterations to curString
+const char *defaultLegend = "Allowed Characters Legend\n K - Black   ||   W- White \n R - Red      ||   G - Green \n B - Blue     ||   A - Aqua \n P - Purple ||   Y - Yellow";
 
 /*
  * Traditional Arduino setup routine
@@ -71,9 +74,9 @@ const char *defaultLegend = "Allowed Characters Legend\n K - Black \n W- White \
  * Initialize the SimbleeForMobile environment.
  */
 void setup() {
-  // put your setup code here, to run once:
-  SimbleeForMobile.deviceName = "Name";
-  SimbleeForMobile.advertisementData = "Data";
+  // Simblee Config Options
+  SimbleeForMobile.deviceName = "LightBuoy";
+  SimbleeForMobile.advertisementData = "Commander";
   SimbleeForMobile.domain = "template.simblee.com";
   // Begin Simblee UI
   SimbleeForMobile.begin();
@@ -82,6 +85,9 @@ void setup() {
   pinMode(REDPIN, OUTPUT);
   pinMode(GREENPIN, OUTPUT);
   pinMode(BLUEPIN, OUTPUT);
+
+  // serial for debugging
+  Serial.begin(9600);
   
 
   // Initial State Configuration
@@ -93,14 +99,13 @@ void setup() {
 
 
 /*
- * The traditional Arduino loop method
+ * Runs Simblee Code Process and handles new text and output driving
  * 
  * Enable SimbleeForMobile functionality by calling the process method
  * each time through the loop. This method must be called regularly for
  * functionality to work.
  */
 void loop() {
-  // put your main code here, to run repeatedly:
   // process must be called in the loop for Simblee UI
   SimbleeForMobile.process();  
 
@@ -163,12 +168,15 @@ void loop() {
     memcpy(curPins,toCopy,NUM_COLOURS);
 
     // iterate across pin set to output the pattern in curPins
+    digitalWrite(REDPIN,LOW);
     for(int j = 0; j < NUM_PINS; j++){
       char pinNum = pinSet[j]; // get the current pin number
       char state = (curPins[j] == 1) ? HIGH : LOW; // get the state variable
       digitalWrite(pinNum,state); // write this data out
+//      digitalWrite(j+1,state); // write this data out
+      Serial.print((char)('0'+ curPins[j]));
     }
-
+    Serial.println("endPins");
     delayStart = millis();
 
     // Iterate the current segment, wrapping around
@@ -196,31 +204,25 @@ void ui()
 
   // determine layout positions for the different items
   int fieldWidth = screenW / 2; // take up half the screen in width
-  int fieldStart = screenW / 4; // start 25% of the way across the screen
-  int descHeight = screenH/10; // start the descriptor 10% of the way down the screen
-  int inpHeight = screenH/4; // start the input block 25% of the way down the screen
-  int btnHeight = screenH/3; // start the update button half way down the screen
-  int legendHeight = screenH/2; // start the legend half-way down
+  int fieldStart = screenW / 4; // start 1/4 of the way across the screen
+  int titleStart = screenW/10; // start the title 1/10 across for legibility
+  int descHeight = screenH/10; // start the descriptor 1/10 of the way down the screen
+  int inpHeight = screenH/4; // start the input block 1/4 of the way down the screen
+  int curCodeStart = screenH/3; // start the current code listing 1/3 down
+  int legendHeight = 4*screenH/10; // start the legend 1/2 down
 
   // Start Drawing Items
 
   // Draw the Explanation Text
-  SimbleeForMobile.drawText(fieldStart,descHeight,"Enter 3 Capitalised Letters for Colour Sequence\n e.g. \"RGB\"");
+  SimbleeForMobile.drawText(titleStart,descHeight,(const char *)titleString);
 
   // Draw the Input Field
   textField = SimbleeForMobile.drawTextField(fieldStart,inpHeight,fieldWidth,"Sequence String");
 
-  // Draw the Update Button
-  updateButton = SimbleeForMobile.drawButton(fieldStart,btnHeight,fieldWidth,"Update");
-
-  // Configure Events for the Update Button
-  SimbleeForMobile.setEvents(updateButton, EVENT_PRESS);
-
+  // Draw the Current Code Text
+  curCodeText = SimbleeForMobile.drawText(fieldStart,curCodeStart,(const char*)curString);
   // Draw the Legend Text OR Debug Text, depending
   legendText = SimbleeForMobile.drawText(fieldStart,legendHeight,defaultLegend);
-
-  // default state
-  ui_rect = SimbleeForMobile.drawRect(122, 402, 76, 76, WHITE);
   
   SimbleeForMobile.endScreen();
 }
@@ -236,18 +238,19 @@ void ui_event(event_t &event)
 {
   // Unsure about this operation, will need to check the function of this so we can make something happen
   if(event.id = textField) {
+    if(DEBUGGING){
+      Serial.println("Text Event");
+      Serial.println(event.text);
+    }
     // copy the recieved text to our more manageable field
+    char* text = (char*) event.text;
     for(int i = 0; i < NUM_COLOURS; i++){ // limited to three characters because I'm not a monster
-      inText[i] = defaultTextField[i];
+        inText[i] = text[i];
+        curString[curStringOffset + i] = text[i];
     }
+    Serial.println(curString);
+    SimbleeForMobile.updateText(curCodeText,(const char*)curString); // echo the received text to the legend field
 
-    if(DEBUGGING) {
-      SimbleeForMobile.updateText(legendText,defaultTextField); // echo the received text to the legend field
-    }
-  }
-
-  if(event.id = updateButton) {
-    // mark the text as updated
     textChanged = true;
   }
 }
