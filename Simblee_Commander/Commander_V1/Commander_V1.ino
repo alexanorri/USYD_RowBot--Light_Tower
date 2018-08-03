@@ -44,12 +44,12 @@ char yellowMask[] = {1,1,0};
 char whiteMask[] = {1,1,1};
 
 // Light code general information
-#define NUM_COLOURS 3 // The number of coloured flashes in a given code
-const int numSegs = 2*NUM_COLOURS + 1; // the number of total segments we will need to run through
+#define NUM_COLOURS 4 // The number of coloured flashes in a given code
+const int numSegs = NUM_COLOURS + 1; // the number of total segments we will need to run through
 
 // State information
 int curSeg = 0; // the current segment we're working with
-char colSequence[] = {'K','K','K','K','K','K','K'}; // the full colour sequence we're working with
+char colSequence[] = {'K','K','K','K','K'}; // the full colour sequence we're working with
 char curPins[] = {0,0,0}; // the current output pattern in use
 unsigned long delayStart = 0; // the time when we started delaying from
 
@@ -114,7 +114,7 @@ void loop() {
     // iterate across the given string
     for(int i = 0; i < NUM_COLOURS; i++) {
       char curChar = inText[i]; // extract the current character
-      colSequence[2*i + 1] = curChar; // set the right character in the sequence string to the new value
+      colSequence[i + 1] = curChar; // set the right character in the sequence string to the new value
     }
     curSeg = 0; // resets position in the colour sequence
     

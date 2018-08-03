@@ -18,6 +18,8 @@ Version: 0.1
 
 #include "lightBuoy.h"
 
+#define DEBUGGING 1
+
 RGBmatrixPanel matrix(A, B, C, D, CLK, LAT, OE, false, 64);
 
 uint16_t curState;
@@ -36,6 +38,11 @@ void setup() {
 
   // sets the initial state
   curState = COL_BLACK;
+
+  if(DEBUGGING){
+    // Serial for debugging the software
+    Serial.begin(9600);
+  }
 }
 
 void loop() {
@@ -60,6 +67,10 @@ void updatePanel(uint16_t *state) {
   if(*curState != newColour) {
     // write the colour to the panel
     matrix.fillScreen(newColour);
+
+    if(DEBUGGING){
+      Serial.println(readInput);
+    }
 
     *curState = newColour;
   }
