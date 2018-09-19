@@ -44,11 +44,12 @@ int updateDisplay(void);
 void setup() {
 
   matrix.begin();
+  Serial.begin(9600);
 }
 
 void loop() {
   updateDisplay();
-  delay(500);
+  delay(250);
 //   // Do nothing -- image doesn't change
 //   matrix.fillScreen(matrix.Color333(0,0,0));
 //   delay(2000);
@@ -80,6 +81,11 @@ int updateDisplay(void) {
   char* stateSet[] = {&redState,&greenState,&blueState};
 
   pollPins(stateSet); // reads the pin information
+  Serial.print(char('0'+redState));
+  Serial.print(',');
+  Serial.print(char('0'+greenState));
+  Serial.print(',');
+  Serial.println(char('0'+blueState));
 
   // update the display
   matrix.fillScreen(matrix.Color333(redState,greenState,blueState));
