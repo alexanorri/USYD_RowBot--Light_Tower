@@ -41,7 +41,8 @@ Version: 0.1
 #define BLUE_PIN 5
 
 // ------------------------- Sampling Delay ------------------------------------
-#define SAMPLE_DELAY 50
+// #define SAMPLE_DELAY 50
+#define SAMPLE_DELAY 1
 
 // ---------------------- Definitions of Colours ------------------------------
 
