@@ -49,23 +49,23 @@ Version: 0.1
 #define NUM_PANELS 3 // number of sequential panels we're writing to
 #define SUB_PANELS 4 // number of imaginary sub-panels will be written to for each physical panel
 
-// ---------------------- Definitions of Colours ------------------------------
-
-// All Black and White
-#define COL_BLACK matrix.Color333(0,0,0)
-#define COL_WHITE matrix.Color333(7,7,7)
-
-// Principle Colours
-#define COL_RED matrix.Color333(7,0,0)
-#define COL_GREEN matrix.Color333(0,7,0)
-#define COL_BLUE matrix.Color333(0,0,7)
-
-// Colours defined for fun
-#define COL_YELLOW matrix.Color333(7,7,0)
-#define COL_PURPLE matrix.Color333(7,0,7)
-#define COL_AQUA matrix.Color333(0,7,7)
-
-const uint16_t colourSet[] = [COL_BLACK,COL_BLUE,COL_GREEN,COL_AQUA,COL_RED,COL_PURPLE,COL_YELLOW,COL_WHITE];
+//// ---------------------- Definitions of Colours ------------------------------
+//
+//// All Black and White
+//#define COL_BLACK matrix.Color333(0,0,0)
+//#define COL_WHITE matrix.Color333(7,7,7)
+//
+//// Principle Colours
+//#define COL_RED matrix.Color333(7,0,0)
+//#define COL_GREEN matrix.Color333(0,7,0)
+//#define COL_BLUE matrix.Color333(0,0,7)
+//
+//// Colours defined for fun
+//#define COL_YELLOW matrix.Color333(7,7,0)
+//#define COL_PURPLE matrix.Color333(7,0,7)
+//#define COL_AQUA matrix.Color333(0,7,7)
+//
+//const uint16_t colourSet[] = [COL_BLACK,COL_BLUE,COL_GREEN,COL_AQUA,COL_RED,COL_PURPLE,COL_YELLOW,COL_WHITE];
 
 
 // ----------------------------- Functions -------------------------------------

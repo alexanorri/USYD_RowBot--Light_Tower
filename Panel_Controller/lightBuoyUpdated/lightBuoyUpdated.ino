@@ -1,8 +1,7 @@
 /*
 The USYD RowBot Implementation of the RobotX Light Buoy
 
-This implementation is for the Arduino Uno, although this is only achieved by
-'pretending' that the individual panels are smaller than they are.
+This implementation is for the Arduino MEGA, an uno can't handle the required memory
 
 Regularly reads 3 digital pins for the desired state and displays it to the panels.
 Configurable delay time and read pins.
@@ -17,37 +16,11 @@ Author: Alexander Norris
 Version: 0.1
 */
 
-// The Adafruit Library that does all the magic
-#include <RGBmatrixPanel.h>
+#include "lightBuoy.h"
 
-// -------------- Definitions for the pin constants ---------------------------
+#define DEBUGGING 1
 
-// Most of the signal pins are configurable, but the CLK pin has some
-// special constraints.  On 8-bit AVR boards it must be on PORTB...
-// Pin 8 works on the Arduino Uno & compatibles (e.g. Adafruit Metro)
-
-//#define CLK  8   // USE THIS ON ADAFRUIT METRO M0, etc.
-//#define CLK A4 // USE THIS ON METRO M4 (not M0)
-#define CLK 11 // USE THIS ON ARDUINO MEGA
-#define OE   9
-#define LAT 10
-#define A   A0
-#define B   A1
-#define C   A2
-#define D   A3
-
-// Pins for Reading Colour Commands, will be used to respond to external commands
-#define RED_PIN 3
-#define GREEN_PIN 4
-#define BLUE_PIN 5
-
-// ------------------------- Sampling Delay ------------------------------------
-// #define SAMPLE_DELAY 50
-#define SAMPLE_DELAY 10
-
-// ------------------------ Panel Features -------------------------------------
-#define NUM_PANELS 3 // number of sequential panels we're writing to
-#define SUB_PANELS 4 // number of imaginary sub-panels will be written to for each physical panel
+RGBmatrixPanel matrix(A, B, C, D, CLK, LAT, OE, false, 64);
 
 // ---------------------- Definitions of Colours ------------------------------
 
@@ -68,21 +41,78 @@ Version: 0.1
 const uint16_t colourSet[] = [COL_BLACK,COL_BLUE,COL_GREEN,COL_AQUA,COL_RED,COL_PURPLE,COL_YELLOW,COL_WHITE];
 
 
-// ----------------------------- Functions -------------------------------------
+uint16_t curState;
+
+void setup() {
+  // configure the panel interface, all panels are cloned off the one line set
+  matrix.begin();
+
+  // Configures the data capture pins to digital inputs
+  pinMode(RED_PIN, INPUT);
+  pinMode(GREEN_PIN, INPUT);
+  pinMode(BLUE_PIN, INPUT);
+
+  // Blanks the panel before we begin
+  matrix.fillScreen(COL_BLACK);
+
+  // sets the initial state
+  curState = COL_BLACK;
+
+  if(DEBUGGING){
+    // Serial for debugging the software
+    Serial.begin(9600);
+  }
+}
+
+void loop() {
+  // updates the panel with data from the input pins
+  updatePanel(*curState);
+
+  // delay for the specified time
+  delay(SAMPLE_DELAY);
+}
+
 /*!
    \brief Updates the panel with data from the input pins
    \param the colour value that represents the current state of the panel
    \pre matrix, pins and current state must all be declared and configured
    \return void
 */
-void updatePanel(uint16_t *state);
+void updatePanel(uint16_t *state) {
+  // Checks the input to determine if a new colour command has been received
+  uint16_t newColour = determineColour(readInput(), colourSet);
+
+  // checks if there's been any change in signal
+  if(*state != newColour) {
+    // write out to all the panels in one go
+    int numReps = NUM_PANELS * SUB_PANELS;
+    for(int i = 0; i < numReps; i++) {
+      // write the colour to the panel
+      matrix.fillScreen(newColour);
+    }
+
+    if(DEBUGGING){
+      Serial.println(readInput);
+    }
+
+    *state = newColour;
+  }
+}
 
 /*!
    \brief Reads the data from the input pins and outputs it as an unigned byte
    \pre Pins must be configured as digital inputs in setup
    \return integer displaying bit field of input
 */
-uint8_t readInput(void);
+uint8_t readInput(void) {
+  uint8_t colourSet, readVal = 0;
+  // reads input and bit-shifts it to the correct positions
+  readVal |= (digitalRead(RED_PIN) << 2);
+  readVal |= (digitalRead(GREEN_PIN) << 1);
+  readVal |= digitalRead(BLUE_PIN);
+
+  return readVal;
+}
 
 /*!
    \brief Determines the specific colour value specified by the 3-bit value given
@@ -90,4 +120,6 @@ uint8_t readInput(void);
    \param colSet - array of colour values that correspond to the 8 allowed colours
    \return uint16_t colour value specifying the exact colour to write to the panel
 */
-uint16_t determineColour(uint8_t index, uint16_t* colSet);
+uint16_t determineColour(uint8_t index, uint16_t* colSet) {
+  return colSet[index];
+}

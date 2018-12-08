@@ -28,6 +28,10 @@
 #define C   A2
 #define D   A3
 
+#define NUM_PANELS 3
+#define SUB_PANELS 1
+
+#define DELAY_TIME 100
 
 RGBmatrixPanel matrix(A, B, C, D, CLK, LAT, OE, false);
 
@@ -49,7 +53,7 @@ void setup() {
 
 void loop() {
   updateDisplay();
-  delay(250);
+  delay(DELAY_TIME);
 //   // Do nothing -- image doesn't change
 //   matrix.fillScreen(matrix.Color333(0,0,0));
 //   delay(2000);
@@ -87,7 +91,10 @@ int updateDisplay(void) {
   Serial.print(',');
   Serial.println(char('0'+blueState));
 
-  // update the display
-  matrix.fillScreen(matrix.Color333(redState,greenState,blueState));
+  for(int i = 0; i < NUM_PANELS*SUB_PANELS; i++) {
+    // update the display
+    matrix.fillScreen(matrix.Color333(redState,greenState,blueState));
+  }
+  
   return 0;
 }
